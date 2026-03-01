@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use firebase_rs::Firebase;
 use serde::{Deserialize, Serialize}; 
 use futures::future::join_all;
+use tokio::io::{self, AsyncBufReadExt, BufReader};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Todo {
@@ -33,11 +34,15 @@ async fn get_Todos(firebase_client: &Firebase) -> HashMap<String,Todo>{
     Todo
 }
  
-async fn get_Todos_by_id(firebase_client: &Firebase, id: &String ) -> HashMap<String,Todo>{
-    let  firebase = firebase_client.at("Todos").at(&id);
-    let Todo = firebase.get::<HashMap<String,Todo>>()
-        .await.unwrap();
-    Todo
+async fn get_Todo_by_id(firebase_client: &Firebase, id: &String ) -> Todo {
+    let firebase = firebase_client.at("Todos").at(&id);                
+    
+    // Deserialize directly to a String, not a HashMap
+    let todo_content = firebase.get::<Todo>() 
+        .await
+        .unwrap(); // Be careful with unwrap() in production!
+    
+    todo_content
 }
 
 fn string_to_res(s: &str) -> Response {
@@ -48,6 +53,7 @@ fn string_to_res(s: &str) -> Response {
 async fn main() {
     let firebase = Firebase::new("https://jasperlog-c7333.firebaseio.com/")
     .unwrap();
+    let mut id = String::new();
 
     let mut prod = vec![
         Todo {
@@ -82,19 +88,33 @@ async fn main() {
         }
     ];
 
-    let result: Vec<_> = prod.iter()
-        .map(|p| create_Todo(&firebase, &p))
-        .collect();
+    // let result: Vec<_> = prod.iter()
+    //     .map(|p| create_Todo(&firebase, &p))
+    //     .collect();
 
-    let res = join_all(result).await;    
-    // let  result = create_Todo(&firebase, &prod)
-    //     .await;
+    // let res = join_all(result).await;    
+    // // let  result = create_Todo(&firebase, &prod)
+    // //     .await;
     
-    println!("Successfully created to DB! {:?}", res);
+    // println!("Successfully created to DB! {:?}", res);
 
-    let Todos = get_Todos(&firebase).await;
+    let todos = get_Todos(&firebase).await;
 
-    println!("Prroducts in DB {:?}", Todos);
+    println!("Prroducts in DB please choose one here {:?}", todos.keys());
+
+    println!("choose what to retrieve using this ids  ");
+    for fid in todos.keys()
+    { 
+        println!("{}", fid);
+    }
+ 
+    let stdin = io::stdin();
+    let mut reader = BufReader::new(stdin);
+    let mut input = String::new();
+    reader.read_line(&mut input).await;   
+    let spec = get_Todo_by_id(&firebase, &String::from(input.trim())).await;  
+
+    println!("Prroducts in DB by id {:?}", spec);
 
    // get_Todos_by_id = get_Todos_by_id(&firebase, String::from("")).await;
 }
