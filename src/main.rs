@@ -57,7 +57,7 @@ async fn main() {
             qty: 111
         },
         Todo {
-            name: String::from(""),
+            name: String::from("sniper"),
             description: String::from("Awesome"),
             price: 200.23,
             qty: 111
