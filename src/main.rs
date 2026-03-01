@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use futures::future::join_all;
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Product {
+struct Todo {
     name: String,
     description: String,
     price: f32,
@@ -17,27 +17,27 @@ struct Response {
 }
 
 
-async  fn create_product(firebase_client: &Firebase, product: &Product)
+async  fn create_Todo(firebase_client: &Firebase, Todo: &Todo)
     -> Response {
-        let  firebase = firebase_client.at("products");
-        let product_res = firebase.set::<Product>(&product)
+        let  firebase = firebase_client.at("Todos");
+        let Todo_res = firebase.set::<Todo>(&Todo)
         .await;
 
-    string_to_res(&product_res.unwrap().data) 
+    string_to_res(&Todo_res.unwrap().data) 
 }
 
-async fn get_products(firebase_client: &Firebase) -> HashMap<String,Product>{
-    let  firebase = firebase_client.at("products");
-    let product = firebase.get::<HashMap<String,Product>>()
+async fn get_Todos(firebase_client: &Firebase) -> HashMap<String,Todo>{
+    let  firebase = firebase_client.at("Todos");
+    let Todo = firebase.get::<HashMap<String,Todo>>()
         .await.unwrap();
-    product
+    Todo
 }
  
-async fn get_products_by_id(firebase_client: &Firebase, id: &String ) -> HashMap<String,Product>{
-    let  firebase = firebase_client.at("products").at(&id);
-    let product = firebase.get::<HashMap<String,Product>>()
+async fn get_Todos_by_id(firebase_client: &Firebase, id: &String ) -> HashMap<String,Todo>{
+    let  firebase = firebase_client.at("Todos").at(&id);
+    let Todo = firebase.get::<HashMap<String,Todo>>()
         .await.unwrap();
-    product
+    Todo
 }
 
 fn string_to_res(s: &str) -> Response {
@@ -50,25 +50,31 @@ async fn main() {
     .unwrap();
 
     let mut prod = vec![
-        Product {
+        Todo {
             name: String::from("Nike"),
             description: String::from("Awesome"),
             price: 200.23,
             qty: 111
         },
-        Product {
+        Todo {
+            name: String::from(""),
+            description: String::from("Awesome"),
+            price: 200.23,
+            qty: 111
+        },
+        Todo {
             name: String::from("m16A1"),
             description: String::from("assult rifle"),
             price: 202340.23,
             qty: 23
         },
-         Product {
+         Todo {
             name: String::from("M60"),
             description: String::from("machine gun"),
             price: 340.23,
             qty: 13
         },
-         Product {
+         Todo {
             name: String::from("AKK47"),
             description: String::from("assult rifle"),
             price: 130.23,
@@ -77,19 +83,19 @@ async fn main() {
     ];
 
     let result: Vec<_> = prod.iter()
-        .map(|p| create_product(&firebase, &p))
+        .map(|p| create_Todo(&firebase, &p))
         .collect();
 
     let res = join_all(result).await;    
-    // let  result = create_product(&firebase, &prod)
+    // let  result = create_Todo(&firebase, &prod)
     //     .await;
     
     println!("Successfully created to DB! {:?}", res);
 
-    let products = get_products(&firebase).await;
+    let Todos = get_Todos(&firebase).await;
 
-    println!("Prroducts in DB {:?}", products);
+    println!("Prroducts in DB {:?}", Todos);
 
-   // get_products_by_id = get_products_by_id(&firebase, String::from("")).await;
+   // get_Todos_by_id = get_Todos_by_id(&firebase, String::from("")).await;
 }
 
